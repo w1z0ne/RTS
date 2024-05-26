@@ -15,6 +15,11 @@ class DirectionalLight {
             console.log("无法设置帧缓冲区对象");
             return;
         }
+        this.satBuffer=new FBO(gl);
+        if (!this.satBuffer) {
+            console.log("无法设置帧缓冲区对象");
+            return;
+        }
     }
 
     // 添加旋转参数

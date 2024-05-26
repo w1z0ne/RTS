@@ -1,3 +1,13 @@
+async function buildSatShader(gl,vertexPath, fragmentPath,shaderLocations) {
+
+
+    let vertexShader = await getShaderString(vertexPath);
+    let fragmentShader = await getShaderString(fragmentPath);
+    // 添加rotate、lightIndex参数
+    return new Shader(gl,vertexShader,fragmentShader,shaderLocations);
+
+}
+
 class WebGLRenderer {
     meshes = [];
     shadowMeshes = [];
@@ -22,8 +32,9 @@ class WebGLRenderer {
     }
     addShadowMeshRender(mesh) { this.shadowMeshes.push(mesh); }
 
+
     // 添加time, deltaime参数
-    render(time, deltaime) {
+    async render(time, deltaime) {
     
         const gl = this.gl;
 
@@ -78,7 +89,7 @@ class WebGLRenderer {
 
             // 切换光源时，对当前光源的shadowmap的framebuffer做一些清理操作
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.lights[l].entity.fbo); // 绑定到当前光源的framebuffer
-            gl.clearColor(1.0, 1.0, 1.0, 1.0); // shadowmap默认白色（无遮挡），解决地面边缘产生阴影的问题（因为地面外采样不到，默认值为0会认为是被遮挡）
+            gl.clearColor(1, 1, 1, 1); // shadowmap默认白色（无遮挡），解决地面边缘产生阴影的问题（因为地面外采样不到，默认值为0会认为是被遮挡）
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // 清除shadowmap上一帧的颜色、深度缓存，否则会一直叠加每一帧的结果
             
 
@@ -111,9 +122,14 @@ class WebGLRenderer {
                     this.shadowMeshes[i].material.uniforms.uLightMVP = { type: 'matrix4fv', value: lightMVP };
                     // Edit End
                     this.shadowMeshes[i].draw(this.camera);
+                
                 }
             }
-
+            //SAT pass
+            /*
+            gl.bindFramebuffer(gl.FRAMEBUFFER,this.lights[l].entity.satBuffer)
+            let shader=await buildSatShader(gl,"./src/shaders/satShader/vert.glsl","./src/shaders/satShader/frag.glsl",{'attribs':['aVertexPosition'],'uniforms':['uInputTexture']})
+            */
             //  非第一个光源Pass时进行一些设置（Base Pass和Additional Pass区分）
             if(l != 0)
             {
@@ -121,7 +137,7 @@ class WebGLRenderer {
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.ONE, gl.ONE);
             }
-            // Edit End
+
 
             // Camera pass
             for (let i = 0; i < this.meshes.length; i++) {

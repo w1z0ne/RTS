@@ -11,12 +11,22 @@ function GAMES202Main() {
 	const canvas = document.querySelector('#glcanvas');
 	canvas.width = window.screen.width;
 	canvas.height = window.screen.height;
-	const gl = canvas.getContext('webgl');
+	const gl = canvas.getContext('webgl2');
 	if (!gl) {
 		alert('Unable to initialize WebGL. Your browser or machine may not support it.');
 		return;
 	}
-
+	/*
+	var ext = gl.getExtension("OES_texture_float");
+	if (!ext) {
+		console.error("OES_texture_float extension not supported");
+	}
+	*/
+	var ext = gl.getExtension('EXT_color_buffer_float');
+        if (!ext) {
+            console.log('需要扩展 EXT_color_buffer_float');
+            return error();
+        }
 	// Add camera
 	const camera = new THREE.PerspectiveCamera(75, gl.canvas.clientWidth / gl.canvas.clientHeight, 1e-2, 1000);
 	camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
@@ -70,11 +80,11 @@ function GAMES202Main() {
 	
 
 	loadOBJ(renderer, 'assets/mary/', 'Marry', 'PhongMaterial', obj1Transform);
-	loadOBJ(renderer, 'assets/mario/', 'mario', 'PhongMaterial', obj2Transform);
-	loadOBJ(renderer, 'assets/rubbish/', 'rubbish', 'PhongMaterial', rubbishTransform);
+	//loadOBJ(renderer, 'assets/mario/', 'mario', 'PhongMaterial', obj2Transform);
+	//loadOBJ(renderer, 'assets/rubbish/', 'rubbish', 'PhongMaterial', rubbishTransform);
 	loadOBJ(renderer, 'assets/floor/', 'floor', 'PhongMaterial', floorTransform);
-	loadOBJ(renderer, 'assets/ball/', 'ball', 'PhongMaterial', ballTransform);
-	loadOBJ(renderer, 'assets/container/', 'container', 'PhongMaterial', containerTransform);
+	//loadOBJ(renderer, 'assets/ball/', 'ball', 'PhongMaterial', ballTransform);
+	//loadOBJ(renderer, 'assets/container/', 'container', 'PhongMaterial', containerTransform);
 
 
 	function createGUI() {

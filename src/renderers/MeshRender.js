@@ -207,5 +207,9 @@ class MeshRender {
 			const offset = 0;
 			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
 		}
+		//gl.bindFramebuffer(gl.FRAMEBUFFER, this.material.frameBuffer);
+		//gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
+		//var pixels = new Float32Array(resolution * resolution * 4); // 每个像素RGBA，所以乘以4
+		//gl.readPixels(0, 0, resolution, resolution, gl.RGBA, gl.FLOAT, pixels);
 	}
 }
