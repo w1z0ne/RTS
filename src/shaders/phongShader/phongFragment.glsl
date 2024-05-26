@@ -54,6 +54,10 @@ float unpack(vec4 rgbaDepth) {
     return dot(rgbaDepth, bitShift);
 }
 
+float unpack2(vec4 rgbaDepth){
+    return rgbaDepth.r;
+}
+
 vec2 poissonDisk[NUM_SAMPLES];
 
 void poissonDiskSamples( const in vec2 randomSeed ) {
@@ -102,9 +106,17 @@ float getShadowBias(float c, float filterRadiusUV){
 }
 
 
+
+vec4 showShadowMap(sampler2D shadowMap, vec4 shadowCoord){
+  // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+  vec4 closestDepthVec = texture2D(shadowMap, shadowCoord.xy);
+
+  return closestDepthVec;
+}
+
 //
 float useShadowMap(sampler2D shadowMap, vec4 shadowCoord, float biasC, float filterRadiusUV){
-  float depth = unpack(texture2D(shadowMap, shadowCoord.xy));
+  float depth = unpack2(texture2D(shadowMap, shadowCoord.xy));
   float cur_depth = shadowCoord.z;
   float bias = getShadowBias(biasC, filterRadiusUV);
   //float bias=0;
@@ -179,6 +191,28 @@ float PCSS(sampler2D shadowMap, vec4 coords, float biasC){
 }
 
 
+float VSSM(sampler2D shadowMap, vec4 coords, float biasC){
+    float zReceiver = coords.z;
+
+    // STEP 1: avgblocker depth 
+    float zBlocker = findBlocker(shadowMap, coords.xy, zReceiver);
+
+    //if(avgBlockerDepth < -EPS)
+      //return 1.0;
+    if(zBlocker < EPS) return 1.0;
+    if(zBlocker > 1.0) return 0.0;
+
+    // STEP 2: penumbra size
+    float penumbra = (zReceiver - zBlocker) * LIGHT_SIZE_UV / zBlocker;
+    float filterRadiusUV = penumbra;
+
+    // STEP 3: filtering
+    return PCF(shadowMap, coords, biasC, filterRadiusUV);
+    
+    
+    
+}
+
 vec3 blinnPhong() {
   vec3 color = texture2D(uSampler, vTextureCoord).rgb;
   color = pow(color, vec3(2.2));
@@ -212,7 +246,7 @@ void main(void) {
   float visibility = 1.;
 
   // 无PCF时的Shadow Bias
-  float nonePCFBiasC = .4;
+  float nonePCFBiasC = .1;
   // 有PCF时的Shadow Bias
   float pcfBiasC = .08;
   // PCF的采样范围，因为是在Shadow Map上采样，需要除以Shadow Map大小，得到uv坐标上的范围
@@ -222,10 +256,9 @@ void main(void) {
   //visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0), nonePCFBiasC, 0.);
   //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC, filterRadiusUV);
   visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
-
+  //visibility=useOriginShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   vec3 phongColor = blinnPhong();
-
+  //vec4 shadowDepth=showShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   gl_FragColor = vec4(phongColor * visibility, 1.0);
-  //gl_FragColor = vec4(phongColor, 1.0);
-  
+  //gl_FragColor = vec4(shadowDepth);
 }

@@ -56,7 +56,7 @@ function GAMES202Main() {
 	// 添加第二个光源
 	let lightPos2 = [100, 90, 0];
 	const directionLight2 = new DirectionalLight(2500, [1, 1, 1], lightPos2, focalPoint, lightUp, true, renderer.gl);
-	renderer.addLight(directionLight2);
+	//renderer.addLight(directionLight2);
 	
 
 	// Add shapes
