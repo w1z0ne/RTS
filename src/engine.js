@@ -6,7 +6,7 @@ var fbo;
 
 GAMES202Main();
 
-function GAMES202Main() {
+async function GAMES202Main() {
 	// Init canvas and gl
 	const canvas = document.querySelector('#glcanvas');
 	canvas.width = window.screen.width;
@@ -60,7 +60,8 @@ function GAMES202Main() {
 	let lightUp = [0, 1, 0]
 	// 改一下第一个光源的亮度
 	const directionLight = new DirectionalLight(2500, [1, 1, 1], lightPos1, focalPoint, lightUp, true, renderer.gl);
-	
+
+	await renderer.addSat();
 	renderer.addLight(directionLight);
 
 	// 添加第二个光源
@@ -85,7 +86,7 @@ function GAMES202Main() {
 	loadOBJ(renderer, 'assets/floor/', 'floor', 'PhongMaterial', floorTransform);
 	//loadOBJ(renderer, 'assets/ball/', 'ball', 'PhongMaterial', ballTransform);
 	//loadOBJ(renderer, 'assets/container/', 'container', 'PhongMaterial', containerTransform);
-
+	//renderer.satShader=await buildSatShader(gl,"./src/shaders/satShader/vert.glsl","./src/shaders/satShader/frag.glsl",{'attribs':['aVertexPosition'],'uniforms':['uInputTexture']})
 
 	function createGUI() {
 		const gui = new dat.gui.GUI();
@@ -98,12 +99,17 @@ function GAMES202Main() {
 	// deltaTime实现
 	let prevTime = 0;
 
+	const interval =10
 	function mainLoop(now) {
 		cameraControls.update();
-		let deltaime = (now - prevTime) / 1000;
-		renderer.render(now, deltaime);
+		if(now-prevTime>interval){
+			let deltaime = (now - prevTime) / 1000;
+			renderer.render(now, deltaime);
+			prevTime = now;
+		}
+
 		requestAnimationFrame(mainLoop);
-		prevTime = now;
+
 	}
 	
 	requestAnimationFrame(mainLoop);

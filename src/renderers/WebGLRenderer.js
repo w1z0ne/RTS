@@ -1,24 +1,27 @@
-async function buildSatShader(gl,vertexPath, fragmentPath,shaderLocations) {
-
-
-    let vertexShader = await getShaderString(vertexPath);
-    let fragmentShader = await getShaderString(fragmentPath);
-    // 添加rotate、lightIndex参数
-    return new Shader(gl,vertexShader,fragmentShader,shaderLocations);
-
-}
-
 class WebGLRenderer {
     meshes = [];
     shadowMeshes = [];
     lights = [];
     names=[];
     ballUp=1
+    satRenderX=null
+    satRenderY=null
     constructor(gl, camera) {
         this.gl = gl;
         this.camera = camera;
+
     }
 
+    async addSat(){
+        this.satRenderX=await buildSatRenderX(this.gl,'./src/shaders/satShaderX/vert.glsl','./src/shaders/satShaderX/frag.glsl',{
+            uniforms:['uInputTexture'],
+            attribs:["a_position","a_texCoord"]
+        })
+        this.satRenderY=await buildSatRenderY(this.gl,'./src/shaders/satShaderY/vert.glsl','./src/shaders/satShaderY/frag.glsl',{
+            uniforms:['uInputTexture'],
+            attribs:["a_position","a_texCoord"]
+        })
+    }
     addLight(light) {
         this.lights.push({
             entity: light,
@@ -34,7 +37,7 @@ class WebGLRenderer {
 
 
     // 添加time, deltaime参数
-    async render(time, deltaime) {
+    render(time, deltaime) {
     
         const gl = this.gl;
 
@@ -126,11 +129,50 @@ class WebGLRenderer {
                 }
             }
             //SAT pass
+            this.satRenderX.draw(this.lights[l].entity)
+            this.satRenderY.draw(this.lights[l].entity)
+
             /*
             gl.bindFramebuffer(gl.FRAMEBUFFER,this.lights[l].entity.satBuffer)
-            let shader=await buildSatShader(gl,"./src/shaders/satShader/vert.glsl","./src/shaders/satShader/frag.glsl",{'attribs':['aVertexPosition'],'uniforms':['uInputTexture']})
-            */
+            gl.useProgram(this.satShader.program.glShaderProgram);
+            gl.viewport(0.0, 0.0, resolution, resolution);
+            gl.enableVertexAttribArray(this.satShader.program.attribs['aVertexPosition'])
+            var positionBuffer=gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                0.0,  0.0,
+                resolution,  0.0,
+                0.0,  resolution,
+                0.0,  resolution,
+                resolution,  0.0,
+                resolution,  resolution,
+            ]), gl.STATIC_DRAW);
+            // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+            var size = 2;          // 2 components per iteration
+            var type = gl.FLOAT;   // the data is 32bit floats
+            var normalize = false; // don't normalize the data
+            var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+            var offset = 0;        // start at the beginning of the buffer
+            gl.vertexAttribPointer(
+                this.satShader.program.attribs['aVertexPosition'], size, type, normalize, stride, offset);
+            gl.activeTexture(gl.TEXTURE0)
+            gl.bindTexture(gl.TEXTURE_2D,this.lights[l].entity.fbo.texture);
+            gl.uniform1i(this.satShader.program.uniforms['uInputTexture'],0)
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            var pixels = new Float32Array(resolution * resolution * 4); // 每个像素RGBA，所以乘以4
+            gl.readPixels(0, 0, resolution, resolution, gl.RGBA, gl.FLOAT, pixels);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.lights[l].entity.fbo);
+            //var attachedTexture0 = gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
+
+            var pixels0 = new Float32Array(resolution * resolution * 4); // 每个像素RGBA，所以乘以4
+            gl.readPixels(0, 0, resolution, resolution, gl.RGBA, gl.FLOAT, pixels0);
+             */
             //  非第一个光源Pass时进行一些设置（Base Pass和Additional Pass区分）
+            //var attachedTexture = gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
+
+
             if(l != 0)
             {
                 // 开启混合，把Additional Pass混合到Base Pass结果上，否则会覆盖Base Pass的渲染结果
