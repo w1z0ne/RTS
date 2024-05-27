@@ -1,4 +1,4 @@
-var cameraPosition = [30, 30, 30]
+var cameraPosition = [30, 100, 30]
 
 //生成的纹理的分辨率，纹理必须是标准的尺寸 256*256 1024*1024  2048*2048
 var resolution = 2048;
@@ -55,7 +55,7 @@ async function GAMES202Main() {
 	
 	// Add lights
 	// light - is open shadow map == true
-	let lightPos1 = [0, 80, 80];
+	let lightPos1 = [0, 100, 100];
 	let focalPoint = [0, 0, 0];
 	let lightUp = [0, 1, 0]
 	// 改一下第一个光源的亮度
@@ -67,7 +67,7 @@ async function GAMES202Main() {
 	// 添加第二个光源
 	let lightPos2 = [100, 90, 0];
 	const directionLight2 = new DirectionalLight(2500, [1, 1, 1], lightPos2, focalPoint, lightUp, true, renderer.gl);
-	//renderer.addLight(directionLight2);
+	renderer.addLight(directionLight2);
 	
 
 	// Add shapes
@@ -81,8 +81,8 @@ async function GAMES202Main() {
 	
 
 	loadOBJ(renderer, 'assets/mary/', 'Marry', 'PhongMaterial', obj1Transform);
-	//loadOBJ(renderer, 'assets/mario/', 'mario', 'PhongMaterial', obj2Transform);
-	//loadOBJ(renderer, 'assets/rubbish/', 'rubbish', 'PhongMaterial', rubbishTransform);
+	loadOBJ(renderer, 'assets/mario/', 'mario', 'PhongMaterial', obj2Transform);
+	loadOBJ(renderer, 'assets/rubbish/', 'rubbish', 'PhongMaterial', rubbishTransform);
 	loadOBJ(renderer, 'assets/floor/', 'floor', 'PhongMaterial', floorTransform);
 	//loadOBJ(renderer, 'assets/ball/', 'ball', 'PhongMaterial', ballTransform);
 	//loadOBJ(renderer, 'assets/container/', 'container', 'PhongMaterial', containerTransform);
@@ -99,7 +99,8 @@ async function GAMES202Main() {
 	// deltaTime实现
 	let prevTime = 0;
 
-	const interval =10
+	//调整帧率
+	const interval =1000/30;
 	function mainLoop(now) {
 		cameraControls.update();
 		if(now-prevTime>interval){

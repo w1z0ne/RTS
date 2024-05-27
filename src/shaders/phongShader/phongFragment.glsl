@@ -31,7 +31,7 @@ varying highp vec3 vNormal;
 #define LIGHT_SIZE_UV LIGHT_WORLD_SIZE / FRUSTUM_SIZE
 
 
-#define EPS 1e-10
+#define EPS 1e-3
 #define PI 3.141592653589793
 #define PI2 6.283185307179586
 
@@ -199,8 +199,8 @@ float PCSS(sampler2D shadowMap, vec4 coords, float biasC){
 //根据sat获得深度期望和方差
 vec4 getSAT(float wPenumbra, vec3 projCoords){
     // wPnumbra：半影在shadowmap上的面积
-    wPenumbra=2.0;
-    float stride = 1.0 / RESOLUTION;
+    
+    float stride =1.0 ;
     float xmax = projCoords.x + wPenumbra * stride;
     float xmin = projCoords.x - wPenumbra * stride;
     float ymax = projCoords.y + wPenumbra * stride;
@@ -209,7 +209,7 @@ vec4 getSAT(float wPenumbra, vec3 projCoords){
     vec4 B = texture2D(uSat, vec2(xmax, ymin));
     vec4 C = texture2D(uSat, vec2(xmin, ymax));
     vec4 D = texture2D(uSat, vec2(xmax, ymax));
-    float sPenumbra = 2.0 * wPenumbra;
+    float sPenumbra = 2.0 * wPenumbra*RESOLUTION;
     vec4 areaAvg = (D + A - B - C) / float(sPenumbra * sPenumbra);
     return areaAvg;
 }
@@ -231,18 +231,29 @@ float chebyshev(vec2 moments, float currentDepth){
 }
 
 float VSSM(sampler2D shadowMap, vec4 coords, float biasC){
+
+  
+  float bias = getShadowBias(0.005, FILTER_RADIUS / SHADOW_MAP_SIZE);
+  //float bias=0.0;
+  //计算平均遮挡深度
+  float posZFromLight = vPositionFromLight.z;
     float zReceiver = coords.z;
     
-    // STEP 1: avgblocker depth 
-    float zBlocker = findBlocker(shadowMap, coords.xy, zReceiver);
-
+    float searchRadius = LIGHT_SIZE_UV * (posZFromLight - NEAR_PLANE) / posZFromLight;
+    float currentDepth = coords.z  - bias ;
+    vec4 moments = getSAT(float(searchRadius), coords.xyz);
+    float averageDepth = moments.x;
+	  float t = chebyshev(moments.xy, currentDepth); 
+    float zBlocker = (averageDepth - t * (currentDepth )) / (1.0 - t);
+    
     //if(avgBlockerDepth < -EPS)
       //return 1.0;
-    if(zBlocker < EPS) return 1.0;
-    if(zBlocker > 1.0) return 0.0;
+      //if(zBlocker<0.0)return 1.0;
+    //if(zBlocker < 1.0) return 1.0;
+    //if(zBlocker > 1.0) return 0.0;
 
     // STEP 2: penumbra size
-    float penumbra = (zReceiver - zBlocker) * LIGHT_SIZE_UV / zBlocker;
+    float penumbra = (currentDepth - zBlocker) * LIGHT_SIZE_UV / zBlocker;
     float filterRadiusUV = penumbra;
 
     // STEP 3: filtering
@@ -276,46 +287,7 @@ vec3 blinnPhong() {
   return phongColor;
 }
 
-float getShadow_VSSM(vec3 projCoords){
-    float shadow;
 
-    float bias = 0.0;
-    float posZFromLight = vPositionFromLight.z;
-    float blockerSearchSize = LIGHT_SIZE_UV * (posZFromLight - NEAR_PLANE) / posZFromLight;
-
-    float currentDepth = projCoords.z  - bias ;
-    if(currentDepth > 1.0){
-        return 1.0;
-    }
-
-    vec4 moments = getSAT(float(blockerSearchSize), projCoords);
-    float averageDepth = moments.x;
-	  float alpha = chebyshev(moments.xy, currentDepth); // ������˴���currentDepth�İٷֱ� (N1/N)
-    // ������currentDepth�����ƽ��ֵ���Ƴ�currentDepth,Ȼ���������С��currentDepthҲ���Ǳ��ڵ���ƽ�����
-	  float dBlocker = (averageDepth - alpha * (currentDepth - bias)) / (1.0 - alpha);
-
-    //return averageDepth;
-
-    if (dBlocker < 0.001) {
-        // awds
-		return 0.0;
-	}
-	if (dBlocker > 1.0) {
-		return 1.0;
-	}
-	float wPenumbra = (currentDepth - dBlocker) * LIGHT_SIZE_UV / dBlocker;// ͨ���������������������Χ
-	if (wPenumbra <= 0.0) {
-		return 1.0;
-	}
-	moments = getSAT(wPenumbra, projCoords);// �ڲ�����Χ��ȥ��ƽ��ֵ
-	if (currentDepth <= moments.x) { // ȷ������̬�ֲ����ұ�
-		return 1.0;
-	}
-	// CDF estimation
-	shadow = chebyshev(moments.xy, currentDepth);// �ٴ�ͨ���б�ѩ������shadow
-    
-    return shadow;
-}
 
 
 void main(void) {
@@ -337,16 +309,18 @@ void main(void) {
   // 硬阴影无PCF，最后参数传0
   //visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0), nonePCFBiasC, 0.);
   //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC, filterRadiusUV);
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
+  visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
   //visibility=useOriginShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   vec3 phongColor = blinnPhong();
-  visibility=VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
+  
   //visibility=1.0-getShadow_VSSM(shadowCoord);
   //vec4 shadowDepth=showShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   
   //gl_FragColor=vec4(shadowCoord,1.0);
+  //visibility=VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
   gl_FragColor=vec4(phongColor*visibility,1.0);
   //gl_FragColor = vec4((visibility), 0,0,1);
-  //gl_FragColor = vec4(shadowDepth);
+  //gl_FragColor = vec4(testVSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC),0,0,1);
   //gl_FragColor=getSAT(10.0,shadowCoord);
+  
 }
