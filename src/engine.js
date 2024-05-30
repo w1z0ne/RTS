@@ -100,7 +100,7 @@ async function GAMES202Main() {
 	let prevTime = 0;
 
 	//调整帧率
-	const interval =1000/30;
+	const interval =1000/60;
 	function mainLoop(now) {
 		cameraControls.update();
 		if(now-prevTime>interval){

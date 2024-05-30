@@ -3,9 +3,10 @@ class WebGLRenderer {
     shadowMeshes = [];
     lights = [];
     names=[];
-    ballUp=1
-    satRenderX=null
-    satRenderY=null
+    ballUp=1;
+    satRenderX=null;
+    satRenderY=null;
+    useSat=true;
     constructor(gl, camera) {
         this.gl = gl;
         this.camera = camera;
@@ -128,9 +129,13 @@ class WebGLRenderer {
                 
                 }
             }
+
             //SAT pass
-            this.satRenderX.draw(this.lights[l].entity)
-            this.satRenderY.draw(this.lights[l].entity)
+            if(this.useSat==true){
+                this.satRenderX.draw(this.lights[l].entity)
+                this.satRenderY.draw(this.lights[l].entity)
+            }
+            
 
             /*
             gl.bindFramebuffer(gl.FRAMEBUFFER,this.lights[l].entity.satBuffer)
