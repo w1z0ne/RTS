@@ -48,9 +48,8 @@ class WebGLRenderer {
         gl.depthFunc(gl.LEQUAL); // Near things obscure far things
 
         console.assert(this.lights.length != 0, "No light");
-        //console.assert(this.lights.length == 1, "Multiple lights"); //取消多光源检测
+        //console.assert(this.lights.length == 1, "Multiple lights"); 
 
-        // 角色旋转，地面不转(用顶点数筛选)
         for (let i = 0; i < this.meshes.length; i++) {
             if(this.meshes[i].mesh.count > 10)
             {
@@ -73,10 +72,10 @@ class WebGLRenderer {
             }
             else if(this.names[i]=="ball"){
                 let speed=20
-                if(this.ballUp==1 && this.meshes[i].mesh.transform.translate[1]>=70){
+                if(this.ballUp==1 && this.meshes[i].mesh.transform.translate[1]>=45){
                     this.ballUp=0
                 }
-                if(this.meshes[i].mesh.transform.translate[1]<=10 && this.ballUp==0){
+                if(this.meshes[i].mesh.transform.translate[1]<=5 && this.ballUp==0){
                     this.ballUp=1
                 }
                 if(this.ballUp==1){
@@ -91,20 +90,17 @@ class WebGLRenderer {
 
         for (let l = 0; l < this.lights.length; l++) {
 
-            // 切换光源时，对当前光源的shadowmap的framebuffer做一些清理操作
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.lights[l].entity.fbo); // 绑定到当前光源的framebuffer
-            gl.clearColor(1, 1, 1, 1); // shadowmap默认白色（无遮挡），解决地面边缘产生阴影的问题（因为地面外采样不到，默认值为0会认为是被遮挡）
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // 清除shadowmap上一帧的颜色、深度缓存，否则会一直叠加每一帧的结果
+            
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.lights[l].entity.fbo); 
+            gl.clearColor(1, 1, 1, 1); 
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); 
             
 
-            // Draw light
-            // TODO: Support all kinds of transform
-            // 灯光围绕原点旋转
             
             let lightRotateSpped = [0,0,0,0]
             let lightPos = this.lights[l].entity.lightPos;
             lightPos = vec3.rotateY(lightPos, lightPos, this.lights[l].entity.focalPoint, degrees2Radians(lightRotateSpped[l]) * deltaime);
-            this.lights[l].entity.lightPos = lightPos; //给DirectionalLight的lightPos赋值新的位置，CalcLightMVP计算LightMVP需要用到
+            this.lights[l].entity.lightPos = lightPos; 
             this.lights[l].meshRender.mesh.transform.translate = lightPos;
             
 
@@ -124,7 +120,6 @@ class WebGLRenderer {
                     let scale = this.shadowMeshes[i].mesh.transform.scale;
                     let lightMVP = this.lights[l].entity.CalcLightMVP(translation, rotation, scale);
                     this.shadowMeshes[i].material.uniforms.uLightMVP = { type: 'matrix4fv', value: lightMVP };
-                    // Edit End
                     this.shadowMeshes[i].draw(this.camera);
                 
                 }
@@ -199,13 +194,11 @@ class WebGLRenderer {
                 let lightMVP = this.lights[l].entity.CalcLightMVP(translation, rotation, scale);
                 this.meshes[i].material.uniforms.uLightMVP = { type: 'matrix4fv', value: lightMVP };
                 this.meshes[i].material.uniforms.uLightPos = { type: '3fv', value: this.lights[l].entity.lightPos }; // 光源方向计算、光源强度衰减
-                // Edit End
                 this.meshes[i].draw(this.camera);
             }
 
             //  还原Additional Pass的设置
             gl.disable(gl.BLEND);
-            // Edit End
         }
     }
 }

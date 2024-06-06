@@ -1,4 +1,4 @@
-var cameraPosition = [30, 100, 30]
+var cameraPosition = [0, 52, 95]
 
 //生成的纹理的分辨率，纹理必须是标准的尺寸 256*256 1024*1024  2048*2048
 var resolution = 2048;
@@ -55,7 +55,7 @@ async function GAMES202Main() {
 	
 	// Add lights
 	// light - is open shadow map == true
-	let lightPos1 = [0, 100, 100];
+	let lightPos1 = [120, 100, 0];
 	let focalPoint = [0, 0, 0];
 	let lightUp = [0, 1, 0]
 	// 改一下第一个光源的亮度
@@ -65,26 +65,25 @@ async function GAMES202Main() {
 	renderer.addLight(directionLight);
 
 	// 添加第二个光源
-	let lightPos2 = [100, 90, 0];
+	let lightPos2 = [0, 140, 120];
 	const directionLight2 = new DirectionalLight(2500, [1, 1, 1], lightPos2, focalPoint, lightUp, true, renderer.gl);
 	renderer.addLight(directionLight2);
 	
 
 	// Add shapes
-	// 添加旋转参数
 	let floorTransform = setTransform(0, 0, -30, 0, 0, 0, 6, 6, 6);
 	let obj1Transform = setTransform(0, 0, 0, 0, 0, 0, 20, 20, 20);
-	let obj2Transform = setTransform(40, 0, -80, 0, 0, 0, 1, 1, 1);
+	let obj2Transform = setTransform(30, 0, -60, 0, 0, 0, 0.6, 0.6, 0.6);
 	let rubbishTransform = setTransform(-80, 0, 0, 0, 0, 0,16, 16, 16);
 	let containerTransform = setTransform(80, 0, 0, 0, 0, 0,6, 6, 6);
-	let ballTransform = setTransform(60, 50, 60, 0, 0, 0, 50, 50, 50);
+	let ballTransform = setTransform(20, 20, 20, 0, 0, 0, 30, 30, 30);
 	
 
 	loadOBJ(renderer, 'assets/mary/', 'Marry', 'PhongMaterial', obj1Transform);
 	loadOBJ(renderer, 'assets/mario/', 'mario', 'PhongMaterial', obj2Transform);
-	loadOBJ(renderer, 'assets/rubbish/', 'rubbish', 'PhongMaterial', rubbishTransform);
+	//loadOBJ(renderer, 'assets/rubbish/', 'rubbish', 'PhongMaterial', rubbishTransform);
 	loadOBJ(renderer, 'assets/floor/', 'floor', 'PhongMaterial', floorTransform);
-	//loadOBJ(renderer, 'assets/ball/', 'ball', 'PhongMaterial', ballTransform);
+	loadOBJ(renderer, 'assets/ball/', 'ball', 'PhongMaterial', ballTransform);
 	//loadOBJ(renderer, 'assets/container/', 'container', 'PhongMaterial', containerTransform);
 	//renderer.satShader=await buildSatShader(gl,"./src/shaders/satShader/vert.glsl","./src/shaders/satShader/frag.glsl",{'attribs':['aVertexPosition'],'uniforms':['uInputTexture']})
 
@@ -99,7 +98,6 @@ async function GAMES202Main() {
 	// deltaTime实现
 	let prevTime = 0;
 
-	//调整帧率
 	const interval =1000/60;
 	function mainLoop(now) {
 		cameraControls.update();
@@ -124,19 +122,16 @@ function setTransform(t_x, t_y, t_z, r_x, r_y, r_z, s_x, s_y, s_z) {
 		modelTransX: t_x,
 		modelTransY: t_y,
 		modelTransZ: t_z,
-		//
 		modelRotateX: r_x,
 		modelRotateY: r_y,
 		modelRotateZ: r_z,
-		
 		modelScaleX: s_x,
 		modelScaleY: s_y,
 		modelScaleZ: s_z,
 	};
 }
 
-//
-//角度转弧度
+
 function degrees2Radians(degrees){
 	return 3.1415927 / 180 * degrees;
 }

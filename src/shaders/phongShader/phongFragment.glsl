@@ -219,11 +219,14 @@ vec4 test(){
 }
 
 float chebyshev(vec2 moments, float currentDepth){
-    if (currentDepth <= moments.x) {
+  
+  if (currentDepth <= moments.x+0.03) {
 		return 1.0;
 	}
+  
 	// calculate variance from mean.
 	float variance = moments.y - (moments.x * moments.x);
+  //return variance;  
 	variance = max(variance, 0.0001);
 	float d = currentDepth - moments.x;
 	float p_max = variance / (variance + d * d);
@@ -234,16 +237,17 @@ float VSSM(sampler2D shadowMap, vec4 coords, float biasC){
 
   
   //float bias = getShadowBias(0.005, FILTER_RADIUS / SHADOW_MAP_SIZE);
-  float bias=0.02;
+  float bias=0.0;
   //计算平均遮挡深度
   float posZFromLight = vPositionFromLight.z;
     float zReceiver = coords.z;
-    
-    float searchRadius = LIGHT_SIZE_UV * (posZFromLight - NEAR_PLANE) / posZFromLight;
+    float searchRadius =0.003;
+    //float searchRadius = LIGHT_SIZE_UV * (posZFromLight - NEAR_PLANE) / posZFromLight;
     float currentDepth = coords.z  - bias ;
     vec4 moments = getSAT(float(searchRadius), coords.xyz);
     float averageDepth = moments.x;
 	  float t = chebyshev(moments.xy, currentDepth); 
+    //t=max(t,0.001);
     float zBlocker = (averageDepth - t * (currentDepth )) / (1.0 - t);
     
     //if(avgBlockerDepth < -EPS)
@@ -263,6 +267,11 @@ float VSSM(sampler2D shadowMap, vec4 coords, float biasC){
     
     
 }
+
+
+    
+    
+
 
 vec3 blinnPhong() {
   vec3 color = texture2D(uSampler, vTextureCoord).rgb;
@@ -307,9 +316,9 @@ void main(void) {
   float filterRadiusUV = FILTER_RADIUS / SHADOW_MAP_SIZE;
 
   // 硬阴影无PCF，最后参数传0
-  //visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0), nonePCFBiasC, 0.);
+  visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0), nonePCFBiasC, 0.);
   //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC, filterRadiusUV);
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
+  visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
   //visibility=useOriginShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   vec3 phongColor = blinnPhong();
   
@@ -319,10 +328,11 @@ void main(void) {
   //gl_FragColor=vec4(shadowCoord,1.0);
   
   //使用VSSM时需同时将webglrender的useSat设置为true（第9行），如果卡，可以在engine.js中降低帧率限制（调整103行的interval）
-  visibility=VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
+  
+  //visibility=VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
+  //visibility=test_VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC).x;
   gl_FragColor=vec4(phongColor*visibility,1.0);
-  //gl_FragColor = vec4((visibility), 0,0,1);
-  //gl_FragColor = vec4(testVSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC),0,0,1);
-  //gl_FragColor=getSAT(10.0,shadowCoord);
+  
+  
   
 }
