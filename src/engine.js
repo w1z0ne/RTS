@@ -1,4 +1,4 @@
-var cameraPosition = [0, 52, 95]
+var cameraPosition = [33, 137, 44]
 
 //生成的纹理的分辨率，纹理必须是标准的尺寸 256*256 1024*1024  2048*2048
 var resolution = 2048;
@@ -73,7 +73,7 @@ async function GAMES202Main() {
 	// Add shapes
 	let floorTransform = setTransform(0, 0, -30, 0, 0, 0, 6, 6, 6);
 	let obj1Transform = setTransform(0, 0, 0, 0, 0, 0, 20, 20, 20);
-	let obj2Transform = setTransform(30, 0, -60, 0, 0, 0, 0.6, 0.6, 0.6);
+	let obj2Transform = setTransform(-30, 0, -40, 0, 0, 0, 0.6, 0.6, 0.6);
 	let rubbishTransform = setTransform(-80, 0, 0, 0, 0, 0,16, 16, 16);
 	let containerTransform = setTransform(80, 0, 0, 0, 0, 0,6, 6, 6);
 	let ballTransform = setTransform(20, 20, 20, 0, 0, 0, 30, 30, 30);

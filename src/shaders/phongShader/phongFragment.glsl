@@ -220,7 +220,7 @@ vec4 test(){
 
 float chebyshev(vec2 moments, float currentDepth){
   
-  if (currentDepth <= moments.x+0.03) {
+  if (currentDepth <= moments.x+0.018) {
 		return 1.0;
 	}
   
@@ -236,14 +236,13 @@ float chebyshev(vec2 moments, float currentDepth){
 float VSSM(sampler2D shadowMap, vec4 coords, float biasC){
 
   
-  //float bias = getShadowBias(0.005, FILTER_RADIUS / SHADOW_MAP_SIZE);
-  float bias=0.0;
+  
   //计算平均遮挡深度
   float posZFromLight = vPositionFromLight.z;
     float zReceiver = coords.z;
-    float searchRadius =0.003;
-    //float searchRadius = LIGHT_SIZE_UV * (posZFromLight - NEAR_PLANE) / posZFromLight;
-    float currentDepth = coords.z  - bias ;
+    //float searchRadius =0.003;
+    float searchRadius = LIGHT_SIZE_UV * (posZFromLight - NEAR_PLANE) / posZFromLight;
+    float currentDepth = coords.z ;
     vec4 moments = getSAT(float(searchRadius), coords.xyz);
     float averageDepth = moments.x;
 	  float t = chebyshev(moments.xy, currentDepth); 
@@ -267,7 +266,74 @@ float VSSM(sampler2D shadowMap, vec4 coords, float biasC){
     
     
 }
+float fma(float x, float y, float z)
+{
+  return x*y+z;
+}
 
+float calculateMSMHamburger(vec4 moments, float frag_depth, float depth_bias, float moment_bias)
+{
+    // Bias input data to avoid artifacts
+    vec4 b = mix(moments, vec4(0.5, 0.5, 0.5, 0.5), moment_bias);
+    vec3 z;
+    z[0] = frag_depth - depth_bias;
+
+    // Compute a Cholesky factorization of the Hankel matrix B storing only non-
+    // trivial entries or related products
+    float L32D22 = fma(-b[0], b[1], b[2]);
+    float D22 = fma(-b[0], b[0], b[1]);
+    float squaredDepthVariance = fma(-b[1], b[1], b[3]);
+    float D33D22 = dot(vec2(squaredDepthVariance, -L32D22), vec2(D22, L32D22));
+    float InvD22 = 1.0 / D22;
+    float L32 = L32D22 * InvD22;
+
+    // Obtain a scaled inverse image of bz = (1,z[0],z[0]*z[0])^T
+    vec3 c = vec3(1.0, z[0], z[0] * z[0]);
+
+    // Forward substitution to solve L*c1=bz
+    c[1] = c[1] - b.x;
+    c[2] = c[2] - b.y + L32 * c[1];
+
+    // Scaling to solve D*c2=c1
+    c[1] = c[1] * InvD22;
+    c[2] = c[2] * D22 / D33D22;
+
+    // Backward substitution to solve L^T*c3=c2
+    c[1] = c[1] - L32 * c[2];
+    c[0] = c[0] - dot(c.yz, b.xy);
+
+    // Solve the quadratic equation c[0]+c[1]*z+c[2]*z^2 to obtain solutions
+    // z[1] and z[2]
+    float p = c[1] / c[2];
+    float q = c[0] / c[2];
+    float D = (p * p * 0.25) - q;
+    float r = sqrt(D);
+    z[1] = - p * 0.5 - r;
+    z[2] = - p * 0.5 + r;
+
+    // Compute the shadow intensity by summing the appropriate weights
+    vec4 switchVal = (z[2] < z[0]) ? vec4(z[1], z[0], 1.0, 1.0) :
+                      ((z[1] < z[0]) ? vec4(z[0], z[1], 0.0, 1.0) :
+                      vec4(0.0,0.0,0.0,0.0));
+    float quotient = (switchVal[0] * z[2] - b[0] * (switchVal[0] + z[2]) + b[1])/((z[2] - switchVal[1]) * (z[0] - z[1]));
+    float shadowIntensity = switchVal[2] + switchVal[3] * quotient;
+    return 1.0 - clamp(shadowIntensity, 0.0, 1.0);
+}
+
+
+float MSM(sampler2D shadowMap, vec4 coords){
+  
+  //float bias = getShadowBias(0.005, FILTER_RADIUS / SHADOW_MAP_SIZE);
+  float bias=0.02;
+  float posZFromLight = vPositionFromLight.z;
+  float zReceiver = coords.z;
+    
+  float searchRadius = LIGHT_SIZE_UV * (posZFromLight - NEAR_PLANE) / posZFromLight;
+  float currentDepth = coords.z;
+  vec4 moments = getSAT(float(searchRadius), coords.xyz);
+
+  return calculateMSMHamburger(moments, currentDepth,bias,0.0003);
+}
 
     
     
@@ -316,9 +382,9 @@ void main(void) {
   float filterRadiusUV = FILTER_RADIUS / SHADOW_MAP_SIZE;
 
   // 硬阴影无PCF，最后参数传0
-  visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0), nonePCFBiasC, 0.);
+  //visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0), nonePCFBiasC, 0.);
   //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC, filterRadiusUV);
-  visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
+  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
   //visibility=useOriginShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   vec3 phongColor = blinnPhong();
   
@@ -329,8 +395,10 @@ void main(void) {
   
   //使用VSSM时需同时将webglrender的useSat设置为true（第9行），如果卡，可以在engine.js中降低帧率限制（调整103行的interval）
   
-  //visibility=VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
+  visibility=VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC);
   //visibility=test_VSSM(uShadowMap, vec4(shadowCoord, 1.0), pcfBiasC).x;
+  //visibility = MSM(uShadowMap, vec4(shadowCoord, 1.0));
+ //visibility=MSM(uShadowMap, vec4(shadowCoord, 1.0));
   gl_FragColor=vec4(phongColor*visibility,1.0);
   
   

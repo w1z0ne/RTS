@@ -21,7 +21,7 @@ vec4 pack (float depth) {
 }
 
 vec4 pack2(float depth){
-    vec4 rgbaDepth=vec4(depth,depth*depth,0,1);
+    vec4 rgbaDepth=vec4(depth,depth*depth,depth*depth*depth,depth*depth*depth*depth);
      return rgbaDepth;
 
 }

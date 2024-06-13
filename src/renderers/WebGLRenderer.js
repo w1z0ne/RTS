@@ -72,10 +72,10 @@ class WebGLRenderer {
             }
             else if(this.names[i]=="ball"){
                 let speed=20
-                if(this.ballUp==1 && this.meshes[i].mesh.transform.translate[1]>=45){
+                if(this.ballUp==1 && this.meshes[i].mesh.transform.translate[1]>=65){
                     this.ballUp=0
                 }
-                if(this.meshes[i].mesh.transform.translate[1]<=5 && this.ballUp==0){
+                if(this.meshes[i].mesh.transform.translate[1]<=30 && this.ballUp==0){
                     this.ballUp=1
                 }
                 if(this.ballUp==1){
