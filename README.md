@@ -15,9 +15,9 @@ Percentage Closer Filtering（PCF）是一种用于生成软阴影的技术。�
 Percentage Closer Soft Shadows（PCSS）是一种改进的软阴影生成技术，通过动态调整采样范围实现更为真实的阴影效果。PCSS 的基本原理可以分为三个步骤：
 1. 首先，查找遮挡物并计算其平均深度。定义一个函数用于在 Shadow Map 中查找遮挡物，并计算其平均深度。该函数接收 Shadow Map、坐标和接收点的深度作为参数，并返回遮挡物的平均深度。
 2. 然后，根据光源到遮挡物的距离计算半影区域的大小。在主函数中调用 findBlocker 函数获取遮挡物的平均深度。如果没有找到遮挡物，则返回可见性 1.0，否则根据以下公式计算半影区域的大小：
-$$
-w_{\mathrm{Penumbra}}=(d_{\mathrm{Receiver}}-d_{\mathrm{Blocker}})\cdot\frac{w_{\mathrm{Light}}}{d_{\mathrm{Blocker}}}
-$$
+
+$$w_{\mathrm{Penumbra}}=(d_{\mathrm{Receiver}}-d_{\mathrm{Blocker}})\cdot\frac{w_{\mathrm{Light}}}{d_{\mathrm{Blocker}}}$$
+
 其中，dReceiver 是接收点的深度，dBlocker 是遮挡物的平均深度，wLight 是光源的大小。
 1. 最后，使用计算得到的半影区域作为 PCF 的采样范围，进行多次采样并计算最终的可见性。
 
