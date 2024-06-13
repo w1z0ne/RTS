@@ -1,6 +1,8 @@
 # 实时阴影大作业
 
-本次作业中，本小组在webgl框架下实现了shadow map,PCF,PCSS.并在此基础上增加了多光源，动态物体的支持。此外，还实现了VSSM以及MSM的效果
+本次作业中，本小组在webgl框架下实现了shadow map,PCF,PCSS.并在此基础上增加了多光源，动态物体的支持。此外，还实现了VSSM以及MSM的效果。
+
+只需在vscode中用live server插件打开index.html即可。更换阴影生成方式只需在phongFragment.glsl中的main函数中修改。
 
 ## shadow map
 ShadowMap是一种用于实时阴影生成的技术，可以分为两个步骤进行。第一个步骤是从光源视角渲染出一张深度图，即ShadowMap。第二个步骤是从摄像机视角渲染实际场景，在渲染过程中将像素点转换到光源空间中，并将其深度与ShadowMap中对应的UV坐标记录的深度进行比较，如果该深度大于ShadowMap上的深度，则该点处于阴影中。
